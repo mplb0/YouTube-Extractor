@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Audio Extractor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --primary: 222.2 47.4% 11.2%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96.1%;
+            --secondary-foreground: 222.2 47.4% 11.2%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 96.1%;
+            --accent-foreground: 222.2 47.4% 11.2%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 222.2 84% 4.9%;
+            --radius: 0.5rem;
+        }
+
+        .dark {
+            --background: 222.2 84% 4.9%;
+            --foreground: 210 40% 98%;
+            --card: 222.2 84% 4.9%;
+            --card-foreground: 210 40% 98%;
+            --primary: 210 40% 98%;
+            --primary-foreground: 222.2 47.4% 11.2%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 212.7 26.8% 83.9%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            transition: max-width 0.3s ease;
+        }
+
+        .container.expanded {
+            max-width: 900px;
+        }
+
+        .card {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            position: relative;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: hsl(var(--muted-foreground));
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+            border: 1px solid hsl(var(--input));
+            border-radius: var(--radius);
+            background: hsl(var(--background));
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 3px hsl(var(--ring) / 0.1);
+        }
+
+        input[type="text"]::placeholder {
+            color: hsl(var(--muted-foreground));
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            height: 2.5rem;
+            padding: 0 1.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .button-primary {
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .button-primary:hover {
+            background: hsl(var(--primary) / 0.9);
+        }
+
+        .button-secondary {
+            background: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+            border: 1px solid hsl(var(--border));
+        }
+
+        .button-secondary:hover {
+            background: hsl(var(--accent));
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .video-container {
+            margin-top: 2rem;
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: none;
+            border: 1px solid hsl(var(--border));
+        }
+
+        .video-container.visible {
+            display: block;
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-info {
+            padding: 1.5rem;
+            background: hsl(var(--muted));
+        }
+
+        .video-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid hsl(var(--primary-foreground));
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            padding: 0.75rem 1rem;
+            background: hsl(0 84.2% 60.2% / 0.1);
+            border: 1px solid hsl(0 84.2% 60.2% / 0.2);
+            border-radius: var(--radius);
+            color: hsl(0 84.2% 60.2%);
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .error.visible {
+            display: block;
+        }
+
+        .success {
+            padding: 0.75rem 1rem;
+            background: hsl(142.1 76.2% 36.3% / 0.1);
+            border: 1px solid hsl(142.1 76.2% 36.3% / 0.2);
+            border-radius: var(--radius);
+            color: hsl(142.1 76.2% 36.3%);
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .success.visible {
+            display: block;
+        }
+
+        .icon {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: hsl(var(--secondary));
+            border: 1px solid hsl(var(--border));
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: hsl(var(--accent));
+        }
+
+        .theme-toggle svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            color: hsl(var(--foreground));
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <div class="card">
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                <svg id="sunIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <svg id="moonIcon" style="display: none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+            </button>
+            <h1>YouTube Extractor</h1>
+            <p class="subtitle">Download videos or extract audio from YouTube</p>
+
+            <div class="input-group">
+                <input
+                    type="text"
+                    id="urlInput"
+                    placeholder="Paste YouTube URL here..."
+                    autocomplete="off"
+                />
+            </div>
+
+            <div class="video-container" id="videoContainer">
+                <div class="video-wrapper" id="videoWrapper"></div>
+                <div class="video-info">
+                    <div class="video-title" id="videoTitle">Ready to download</div>
+                    <div class="button-group">
+                        <button class="button button-primary" id="downloadVideo">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                            </svg>
+                            Download Video
+                        </button>
+                        <button class="button button-secondary" id="downloadAudio">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+                            </svg>
+                            Extract Audio
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="error" id="errorMessage"></div>
+            <div class="success" id="successMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const videoContainer = document.getElementById('videoContainer');
+        const videoWrapper = document.getElementById('videoWrapper');
+        const videoTitle = document.getElementById('videoTitle');
+        const downloadVideoBtn = document.getElementById('downloadVideo');
+        const downloadAudioBtn = document.getElementById('downloadAudio');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const mainContainer = document.getElementById('mainContainer');
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+
+        let currentVideoId = null;
+
+        // Dark mode functionality
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+            if (isDark) {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+        initTheme();
+
+        // Extract YouTube video ID from URL
+        function extractVideoId(url) {
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([^&\n?#]+)/,
+                /^([a-zA-Z0-9_-]{11})$/
+            ];
+
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
+        }
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('visible');
+            successMessage.classList.remove('visible');
+            setTimeout(() => {
+                errorMessage.classList.remove('visible');
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.classList.add('visible');
+            errorMessage.classList.remove('visible');
+            setTimeout(() => {
+                successMessage.classList.remove('visible');
+            }, 5000);
+        }
+
+        // Handle URL input
+        urlInput.addEventListener('input', (e) => {
+            const url = e.target.value.trim();
+            if (!url) {
+                videoContainer.classList.remove('visible');
+                mainContainer.classList.remove('expanded');
+                currentVideoId = null;
+                return;
+            }
+
+            const videoId = extractVideoId(url);
+            if (videoId) {
+                currentVideoId = videoId;
+                displayVideo(videoId);
+            }
+        });
+
+        // Display video embed
+        function displayVideo(videoId) {
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.youtube.com/embed/${videoId}`;
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+            iframe.allowFullscreen = true;
+
+            videoWrapper.innerHTML = '';
+            videoWrapper.appendChild(iframe);
+
+            videoContainer.classList.add('visible');
+            mainContainer.classList.add('expanded');
+
+            // Fetch video info
+            fetchVideoInfo(videoId);
+        }
+
+        // Fetch video information
+        async function fetchVideoInfo(videoId) {
+            try {
+                const response = await fetch(`/api/info?videoId=${videoId}`);
+                const data = await response.json();
+
+                if (data.title) {
+                    videoTitle.textContent = data.title;
+                }
+            } catch (error) {
+                console.error('Error fetching video info:', error);
+            }
+        }
+
+        // Download video
+        downloadVideoBtn.addEventListener('click', async () => {
+            if (!currentVideoId) return;
+
+            downloadVideoBtn.disabled = true;
+            const originalText = downloadVideoBtn.innerHTML;
+            downloadVideoBtn.innerHTML = '<span class="spinner"></span>Downloading...';
+
+            try {
+                const response = await fetch('/api/download-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ videoId: currentVideoId })
+                });
+
+                if (!response.ok) throw new Error('Download failed');
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `video-${currentVideoId}.mp4`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                showSuccess('Video downloaded successfully!');
+            } catch (error) {
+                showError('Failed to download video. Please try again.');
+                console.error('Download error:', error);
+            } finally {
+                downloadVideoBtn.disabled = false;
+                downloadVideoBtn.innerHTML = originalText;
+            }
+        });
+
+        // Extract and download audio
+        downloadAudioBtn.addEventListener('click', async () => {
+            if (!currentVideoId) return;
+
+            downloadAudioBtn.disabled = true;
+            const originalText = downloadAudioBtn.innerHTML;
+            downloadAudioBtn.innerHTML = '<span class="spinner"></span>Extracting...';
+
+            try {
+                const response = await fetch('/api/download-audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ videoId: currentVideoId })
+                });
+
+                if (!response.ok) throw new Error('Download failed');
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `audio-${currentVideoId}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                showSuccess('Audio extracted and downloaded successfully!');
+            } catch (error) {
+                showError('Failed to extract audio. Please try again.');
+                console.error('Download error:', error);
+            } finally {
+                downloadAudioBtn.disabled = false;
+                downloadAudioBtn.innerHTML = originalText;
+            }
+        });
+    </script>
+</body>
+</html>
