@@ -2,6 +2,8 @@
 
 A beautiful, minimalist web application to download YouTube videos or extract audio, built with shadcn-inspired design.
 
+** This is used for study and educational purpose only. Do not use on Copyrighted Content. I'm not responsible to what you use this for **
+
 ## Features
 
 - Clean, minimalist UI with shadcn design system
