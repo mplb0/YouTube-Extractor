@@ -11,6 +11,10 @@ A beautiful, minimalist web application to download YouTube videos or extract au
 - Paste any YouTube URL and instantly preview the video
 - Support for YouTube Shorts
 - Download full video in best quality
+- **Audio waveform visualization** with WaveSurfer.js
+- **Select specific audio segments** by dragging on the waveform
+- **Preview audio selections** with play/pause controls
+- **Download full audio** or **only selected segments**
 - Extract audio to MP3 format
 - Real-time progress indicators
 - Automatic file cleanup
@@ -216,11 +220,26 @@ docker system prune -a
 
 ## Usage
 
+### Basic Usage
+
 1. Paste a YouTube URL into the input field
 2. The video will automatically embed and display
 3. Click "Download Video" to download the full video
-4. Click "Extract Audio" to download just the audio as MP3
-5. Toggle dark mode with the button in the top-right corner
+4. Toggle dark mode with the button in the top-right corner
+
+### Audio Extraction with Waveform
+
+1. Click "Extract Audio" - The app will extract the audio and display an interactive waveform
+2. **Select a region**: Click and drag on the waveform to highlight a specific portion
+3. **Preview your selection**: Click the "Preview" button to listen to the selected portion
+   - Click "Pause" to pause playback
+   - Playback automatically stops at the end of your selection
+4. **Download options**:
+   - Click "Full Audio" to download the complete audio as MP3
+   - Click "Selection" to download only your selected portion as MP3
+5. The waveform shows:
+   - Start time, end time, and duration of your selection
+   - Visual representation of the audio for easy navigation
 
 ### Supported URL Formats
 
@@ -233,9 +252,36 @@ docker system prune -a
 ## How It Works
 
 - **Frontend**: Pure HTML, CSS, and JavaScript with shadcn-inspired styling
+- **Waveform Visualization**: WaveSurfer.js for interactive audio waveform display
 - **Backend**: Express.js server that interfaces with yt-dlp and ffmpeg
 - **Video Download**: Uses yt-dlp to fetch the best quality video
 - **Audio Extraction**: Uses yt-dlp with ffmpeg to extract and convert audio to MP3
+- **Audio Segmentation**: Uses ffmpeg to trim and extract specific audio segments based on timestamps
+
+## Technologies Used
+
+### Frontend
+- **HTML5/CSS3/JavaScript** - Core web technologies
+- **WaveSurfer.js** - Audio waveform visualization and interaction
+- **Custom CSS** - shadcn-inspired design system with CSS variables for theming
+
+### Backend
+- **Node.js** - JavaScript runtime
+- **Express.js** - Web server framework
+- **yt-dlp** - YouTube video/audio downloader
+- **FFmpeg** - Audio/video processing and conversion
+
+## API Endpoints
+
+The application provides the following REST API endpoints:
+
+- `GET /api/health` - Health check endpoint, returns status of yt-dlp and ffmpeg
+- `GET /api/info?videoId=VIDEO_ID` - Get video information (title, duration, uploader, thumbnail)
+- `POST /api/download-video` - Download full video (body: `{videoId: "VIDEO_ID"}`)
+- `POST /api/download-audio` - Download full audio as MP3 (body: `{videoId: "VIDEO_ID"}`)
+- `POST /api/get-audio` - Extract audio and return path for waveform visualization (body: `{videoId: "VIDEO_ID"}`)
+- `POST /api/download-audio-segment` - Download specific audio segment (body: `{videoId: "VIDEO_ID", startTime: 10, endTime: 30}`)
+- `GET /temp/:filename` - Serve temporary audio files for waveform display
 
 ## Project Structure
 
@@ -286,6 +332,9 @@ sudo systemctl start yt-extractor.service
 - Files are automatically cleaned up after download
 - Old temporary files are removed every 10 minutes
 - The server will check for yt-dlp and ffmpeg on startup
+- Waveform visualization requires the audio to be extracted first
+- Audio segments are trimmed on the server using ffmpeg for precise timing
+- Preview playback stops automatically at the end of selected regions
 
 ## Troubleshooting
 
