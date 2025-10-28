@@ -7,17 +7,41 @@ A beautiful, minimalist web application to download YouTube videos or extract au
 ## Features
 
 - Clean, minimalist UI with shadcn design system
+- Dark mode toggle
 - Paste any YouTube URL and instantly preview the video
+- Support for YouTube Shorts
 - Download full video in best quality
 - Extract audio to MP3 format
 - Real-time progress indicators
 - Automatic file cleanup
+- Docker support for easy deployment
 
 ## Prerequisites
 
+### For Docker Installation (Recommended)
+
+1. **Docker** and **Docker Compose**
+   - **macOS**: Install [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac-install/)
+   - **Windows**: Install [Docker Desktop for Windows](https://docs.docker.com/desktop/install/windows-install/)
+   - **Linux (Ubuntu/Debian)**:
+     ```bash
+     # Install Docker
+     curl -fsSL https://get.docker.com -o get-docker.sh
+     sudo sh get-docker.sh
+
+     # Add your user to docker group (optional)
+     sudo usermod -aG docker $USER
+
+     # Start Docker
+     sudo systemctl start docker
+     sudo systemctl enable docker
+     ```
+
+### For Local Installation
+
 You need to have the following installed on your system:
 
-1. **Node.js** (v14 or higher)
+1. **Node.js** (v18 or higher)
    - Download from [nodejs.org](https://nodejs.org/)
 
 2. **yt-dlp** - YouTube video downloader
@@ -47,6 +71,134 @@ You need to have the following installed on your system:
 
 ## Installation
 
+### Option 1: Docker (Recommended)
+
+Docker provides a consistent environment with all dependencies pre-installed.
+
+#### Quick Start
+
+```bash
+# Clone the repository (or download files)
+git clone <your-repo-url>
+cd yt-audio-extractor
+
+# Build and start the container
+docker compose up -d
+
+# The application will be available at http://localhost:3000
+```
+
+#### Detailed Docker Commands
+
+**Build the Docker image:**
+```bash
+docker compose build
+```
+
+**Start the container (detached mode):**
+```bash
+docker compose up -d
+```
+
+**Start the container (with logs):**
+```bash
+docker compose up
+```
+
+**View logs:**
+```bash
+# Follow logs in real-time
+docker compose logs -f
+
+# View last 100 lines
+docker compose logs --tail=100
+```
+
+**Check container status:**
+```bash
+docker compose ps
+```
+
+**Stop the container:**
+```bash
+docker compose down
+```
+
+**Restart the container:**
+```bash
+docker compose restart
+```
+
+**Rebuild and restart (after code changes):**
+```bash
+docker compose up -d --build
+```
+
+**Access container shell:**
+```bash
+docker compose exec yt-extractor sh
+```
+
+**View resource usage:**
+```bash
+docker stats
+```
+
+#### Using Docker Commands Directly
+
+If you prefer using `docker` instead of `docker compose`:
+
+```bash
+# Build image
+docker build -t yt-audio-extractor .
+
+# Run container
+docker run -d -p 3000:3000 --name yt-extractor yt-audio-extractor
+
+# View logs
+docker logs -f yt-extractor
+
+# Stop container
+docker stop yt-extractor
+
+# Remove container
+docker rm yt-extractor
+```
+
+#### Docker Troubleshooting
+
+**Container won't start:**
+```bash
+# Check logs
+docker compose logs
+
+# Check if port 3000 is already in use
+lsof -i :3000  # macOS/Linux
+netstat -ano | findstr :3000  # Windows
+```
+
+**Rebuild from scratch:**
+```bash
+# Remove everything and rebuild
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+```
+
+**Clean up Docker resources:**
+```bash
+# Remove stopped containers
+docker container prune
+
+# Remove unused images
+docker image prune
+
+# Remove all unused resources
+docker system prune -a
+```
+
+### Option 2: Local Installation
+
 1. Install dependencies:
    ```bash
    npm install
@@ -68,6 +220,15 @@ You need to have the following installed on your system:
 2. The video will automatically embed and display
 3. Click "Download Video" to download the full video
 4. Click "Extract Audio" to download just the audio as MP3
+5. Toggle dark mode with the button in the top-right corner
+
+### Supported URL Formats
+
+- Regular videos: `https://www.youtube.com/watch?v=VIDEO_ID`
+- Short URLs: `https://youtu.be/VIDEO_ID`
+- Shorts: `https://www.youtube.com/shorts/VIDEO_ID`
+- Embed URLs: `https://www.youtube.com/embed/VIDEO_ID`
+- Direct video IDs: `VIDEO_ID`
 
 ## How It Works
 
@@ -80,11 +241,43 @@ You need to have the following installed on your system:
 
 ```
 yt-audio-extractor/
-├── index.html      # Frontend UI
-├── server.js       # Express backend server
-├── package.json    # Node.js dependencies
-├── README.md       # This file
-└── temp/          # Temporary download directory (auto-created)
+├── index.html             # Frontend UI
+├── server.js              # Express backend server
+├── package.json           # Node.js dependencies
+├── Dockerfile             # Docker image definition
+├── docker-compose.yml     # Docker Compose configuration
+├── .dockerignore          # Docker ignore rules
+├── yt-extractor.service   # Systemd service file
+├── DEPLOYMENT.md          # Production deployment guide
+├── README.md              # This file
+└── temp/                  # Temporary download directory (auto-created)
+```
+
+## Production Deployment
+
+For deploying to an Ubuntu server as a systemd service, see the detailed **[DEPLOYMENT.md](DEPLOYMENT.md)** guide.
+
+The deployment guide covers:
+- Installing Docker on Ubuntu Server
+- Setting up the application as a systemd service
+- Configuring Nginx reverse proxy
+- Setting up SSL with Let's Encrypt
+- Monitoring and maintenance
+- Troubleshooting
+
+Quick deployment steps:
+```bash
+# On your Ubuntu server
+sudo mkdir -p /opt/yt-audio-extractor
+cd /opt/yt-audio-extractor
+
+# Copy files to server (via SCP or Git)
+
+# Install and start service
+sudo cp yt-extractor.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable yt-extractor.service
+sudo systemctl start yt-extractor.service
 ```
 
 ## Notes
@@ -96,9 +289,37 @@ yt-audio-extractor/
 
 ## Troubleshooting
 
+### Docker Issues
+
+**Container won't start:**
+```bash
+# Check detailed logs
+docker compose logs
+
+# Check if port 3000 is in use
+docker ps -a
+lsof -i :3000
+```
+
+**yt-dlp errors in Docker:**
+```bash
+# Rebuild with latest yt-dlp
+docker compose build --no-cache
+docker compose up -d
+```
+
+**Permission errors:**
+```bash
+# Ensure temp directory is writable
+docker compose exec yt-extractor ls -la /app/temp
+```
+
+### Local Installation Issues
+
 **"yt-dlp is not installed" error:**
 - Make sure yt-dlp is installed and available in your PATH
 - Run `yt-dlp --version` to verify installation
+- Update with: `pip install --upgrade yt-dlp`
 
 **"ffmpeg is not installed" error:**
 - Make sure ffmpeg is installed and available in your PATH
@@ -108,6 +329,16 @@ yt-audio-extractor/
 - Check your internet connection
 - Some videos may be age-restricted or region-locked
 - Make sure you're using a valid YouTube URL
+- Update yt-dlp to the latest version
+
+**Port already in use:**
+```bash
+# Find what's using port 3000
+lsof -i :3000  # macOS/Linux
+netstat -ano | findstr :3000  # Windows
+
+# Kill the process or change the PORT in server.js
+```
 
 ## License
 
