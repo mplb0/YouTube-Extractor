@@ -288,7 +288,7 @@ The application provides the following REST API endpoints:
 ```
 yt-audio-extractor/
 ├── index.html             # Frontend UI
-├── server.js              # Express backend server
+├── server.js              # Express server entry point
 ├── package.json           # Node.js dependencies
 ├── Dockerfile             # Docker image definition
 ├── docker-compose.yml     # Docker Compose configuration
@@ -296,8 +296,30 @@ yt-audio-extractor/
 ├── yt-extractor.service   # Systemd service file
 ├── DEPLOYMENT.md          # Production deployment guide
 ├── README.md              # This file
+├── src/                   # Backend source code
+│   ├── controllers/       # Business logic handlers
+│   │   ├── audioController.js
+│   │   ├── videoController.js
+│   │   └── healthController.js
+│   ├── routes/            # API route definitions
+│   │   ├── audio.js
+│   │   ├── video.js
+│   │   ├── health.js
+│   │   └── index.js
+│   ├── utils/             # Utility functions
+│   │   ├── dependencies.js
+│   │   └── cleanup.js
+│   └── README.md          # Source code documentation
 └── temp/                  # Temporary download directory (auto-created)
 ```
+
+The application follows a modular architecture:
+- **Controllers**: Handle business logic for different features
+- **Routes**: Define API endpoints and map to controllers
+- **Utils**: Shared utility functions (dependency checks, file cleanup)
+- **Server.js**: Main entry point that initializes the Express app
+
+See [src/README.md](src/README.md) for detailed documentation on the backend architecture.
 
 ## Production Deployment
 
